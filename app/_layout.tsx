@@ -1,24 +1,144 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
+import { useState } from "react";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
 
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import type { MediaItem } from "../types/media";
+import { useSlideshow } from "../hooks/useSlideshow";
 
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+export default function HomeScreen() {
+  const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
 
-export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const { currentMedia, currentIndex } = useSlideshow(selectedMedia);
+
+  const pickImages = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsMultipleSelection: true,
+      quality: 1,
+    });
+
+    if (result.canceled) {
+      return;
+    }
+
+    const media: MediaItem[] = result.assets.map((asset, index) => ({
+      id: `${asset.uri}-${index}`,
+      uri: asset.uri,
+      type: asset.mimeType === "image/gif" ? "gif" : "image",
+      asset,
+    }));
+
+    setSelectedMedia(media);
+  };
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <View style={styles.container}>
+      {!currentMedia ? (
+        <View style={styles.emptyState}>
+          <Text style={styles.title}>Media Slideshow</Text>
+
+          <Text style={styles.subtitle}>
+            Select your photos and GIFs
+          </Text>
+
+          <Pressable style={styles.button} onPress={pickImages}>
+            <Text style={styles.buttonText}>Select Media</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <View style={styles.slideshow}>
+          <Image
+            source={{ uri: currentMedia.uri }}
+            style={styles.media}
+            resizeMode="contain"
+          />
+
+          <View style={styles.info}>
+            <Text style={styles.counter}>
+              {currentIndex + 1} / {selectedMedia.length}
+            </Text>
+
+            <Text style={styles.type}>
+              {currentMedia.type.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+      )}
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#000",
+  },
+
+  emptyState: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+
+  title: {
+    color: "#fff",
+    fontSize: 28,
+    fontWeight: "bold",
+    marginBottom: 10,
+  },
+
+  subtitle: {
+    color: "#aaa",
+    fontSize: 16,
+    marginBottom: 30,
+  },
+
+  button: {
+    backgroundColor: "#fff",
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 10,
+  },
+
+  buttonText: {
+    color: "#000",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  slideshow: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  media: {
+    width: "100%",
+    height: "100%",
+  },
+
+  info: {
+    position: "absolute",
+    bottom: 30,
+    alignItems: "center",
+  },
+
+  counter: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+
+  type: {
+    color: "#aaa",
+    fontSize: 12,
+    marginTop: 4,
+  },
+});
