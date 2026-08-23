@@ -1,23 +1,33 @@
 import { File } from "expo-file-system";
-import { parseGIF, decompressFrames } from "gifuct-js";
 
-export function getGifDuration(buffer: ArrayBuffer): number {
-  const gif = parseGIF(buffer);
-  const frames = decompressFrames(gif, true);
+const gifDurationCache = new Map<string, number>();
 
-  const duration = frames.reduce((total, frame) => {
-    return total + frame.delay;
-  }, 0);
-
-  return duration * 10;
+export function getCachedGifDuration(uri: string) {
+  return gifDurationCache.get(uri);
 }
 
-export async function getGifDurationFromUri(
-  uri: string
-): Promise<number> {
+export function setCachedGifDuration(uri: string, duration: number) {
+  gifDurationCache.set(uri, duration);
+}
+
+export async function getGifDurationFromUri(uri: string): Promise<number> {
   const file = new File(uri);
 
-  const arrayBuffer = await file.arrayBuffer();
+  const buffer = await file.arrayBuffer();
 
-  return getGifDuration(arrayBuffer);
+  const bytes = new Uint8Array(buffer);
+
+  let duration = 0;
+
+  for (let i = 0; i < bytes.length - 7; i++) {
+    // Graphic Control Extension
+    if (bytes[i] === 0x21 && bytes[i + 1] === 0xf9 && bytes[i + 2] === 0x04) {
+      // Delay Time = 2 bytes, little-endian
+      const delay = bytes[i + 4] | (bytes[i + 5] << 8);
+
+      duration += delay * 10;
+    }
+  }
+
+  return duration;
 }

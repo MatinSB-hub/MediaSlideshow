@@ -4,10 +4,22 @@ import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
 import { useSlideshow } from "../hooks/useSlideshow";
 import type { MediaItem } from "../types/media";
-import { getGifDurationFromUri } from "../utils/gif";
+import {
+  getCachedGifDuration,
+  getGifDurationFromUri,
+  setCachedGifDuration,
+} from "../utils/gif";
 
 export default function HomeScreen() {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
+
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const [processingProgress, setProcessingProgress] = useState(0);
+
+  const [processedCount, setProcessedCount] = useState(0);
+
+  const [totalToProcess, setTotalToProcess] = useState(0);
 
   const { currentMedia, currentIndex } = useSlideshow(selectedMedia);
 
@@ -29,12 +41,35 @@ export default function HomeScreen() {
       asset,
     }));
 
-    for (const item of media) {
-      if (item.type === "gif") {
-        const duration = await getGifDurationFromUri(item.uri);
+    const gifs = media.filter((item) => item.type === "gif");
 
-        console.log("GIF duration:", duration, "ms");
+    setTotalToProcess(gifs.length);
+    setProcessedCount(0);
+    setProcessingProgress(0);
+
+    if (gifs.length > 0) {
+      setIsProcessing(true);
+
+      for (let i = 0; i < gifs.length; i++) {
+        const gif = gifs[i];
+
+        let duration = getCachedGifDuration(gif.uri);
+
+        if (duration === undefined) {
+          duration = await getGifDurationFromUri(gif.uri);
+
+          setCachedGifDuration(gif.uri, duration);
+        }
+
+        console.log("GIF duration:", duration, "ms", `(${duration / 1000}s)`);
+
+        const processed = i + 1;
+
+        setProcessedCount(processed);
+        setProcessingProgress(processed / gifs.length);
       }
+
+      setIsProcessing(false);
     }
 
     setSelectedMedia(media);
@@ -42,7 +77,30 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-      {!currentMedia ? (
+      {isProcessing ? (
+        <View style={styles.processing}>
+          <Text style={styles.processingTitle}>Preparing Media...</Text>
+
+          <View style={styles.progressBar}>
+            <View
+              style={[
+                styles.progress,
+                {
+                  width: `${processingProgress * 100}%`,
+                },
+              ]}
+            />
+          </View>
+
+          <Text style={styles.processingText}>
+            {processedCount} / {totalToProcess} GIFs
+          </Text>
+
+          <Text style={styles.processingPercent}>
+            {Math.round(processingProgress * 100)}%
+          </Text>
+        </View>
+      ) : !currentMedia ? (
         <View style={styles.emptyState}>
           <Text style={styles.title}>Media Slideshow</Text>
 
@@ -139,5 +197,44 @@ const styles = StyleSheet.create({
     color: "#aaa",
     fontSize: 12,
     marginTop: 4,
+  },
+  processing: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+  },
+
+  processingTitle: {
+    color: "#fff",
+    fontSize: 24,
+    fontWeight: "bold",
+    marginBottom: 25,
+  },
+
+  progressBar: {
+    width: "100%",
+    height: 10,
+    backgroundColor: "#333",
+    borderRadius: 5,
+    overflow: "hidden",
+  },
+
+  progress: {
+    height: "100%",
+    backgroundColor: "#fff",
+  },
+
+  processingText: {
+    color: "#aaa",
+    fontSize: 16,
+    marginTop: 15,
+  },
+
+  processingPercent: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
+    marginTop: 8,
   },
 });
