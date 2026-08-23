@@ -1,15 +1,10 @@
-import { useState } from "react";
-import {
-  Image,
-  Pressable,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
 import * as ImagePicker from "expo-image-picker";
+import { useState } from "react";
+import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 
-import type { MediaItem } from "../types/media";
 import { useSlideshow } from "../hooks/useSlideshow";
+import type { MediaItem } from "../types/media";
+import { getGifDurationFromUri } from "../utils/gif";
 
 export default function HomeScreen() {
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
@@ -34,6 +29,14 @@ export default function HomeScreen() {
       asset,
     }));
 
+    for (const item of media) {
+      if (item.type === "gif") {
+        const duration = await getGifDurationFromUri(item.uri);
+
+        console.log("GIF duration:", duration, "ms");
+      }
+    }
+
     setSelectedMedia(media);
   };
 
@@ -43,9 +46,7 @@ export default function HomeScreen() {
         <View style={styles.emptyState}>
           <Text style={styles.title}>Media Slideshow</Text>
 
-          <Text style={styles.subtitle}>
-            Select your photos and GIFs
-          </Text>
+          <Text style={styles.subtitle}>Select your photos and GIFs</Text>
 
           <Pressable style={styles.button} onPress={pickImages}>
             <Text style={styles.buttonText}>Select Media</Text>
@@ -64,9 +65,7 @@ export default function HomeScreen() {
               {currentIndex + 1} / {selectedMedia.length}
             </Text>
 
-            <Text style={styles.type}>
-              {currentMedia.type.toUpperCase()}
-            </Text>
+            <Text style={styles.type}>{currentMedia.type.toUpperCase()}</Text>
           </View>
         </View>
       )}
