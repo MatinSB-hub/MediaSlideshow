@@ -6,10 +6,11 @@ const DEFAULT_IMAGE_DURATION = 5000;
 
 export function useSlideshow(
   media: MediaItem[],
-  imageDuration = DEFAULT_IMAGE_DURATION
+  imageDuration = DEFAULT_IMAGE_DURATION,
 ) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isStart, setIsStart] = useState(false);
 
   const currentMedia = media[currentIndex];
 
@@ -53,12 +54,11 @@ export function useSlideshow(
   };
 
   useEffect(() => {
-  if (!isPlaying || !currentMedia) {
-    return;
-  }
+    if (!isPlaying || !currentMedia) {
+      return;
+    }
 
-    const duration =
-      remainingTimeRef.current ?? getDuration();
+    const duration = remainingTimeRef.current ?? getDuration();
 
     if (duration <= 0) {
       return;
@@ -77,6 +77,7 @@ export function useSlideshow(
     }
 
     setIsPlaying(true);
+    setIsStart(true);
   };
 
   const pause = () => {
@@ -91,10 +92,7 @@ export function useSlideshow(
 
       const currentDuration = getDuration();
 
-      remainingTimeRef.current = Math.max(
-        currentDuration - elapsed,
-        0
-      );
+      remainingTimeRef.current = Math.max(currentDuration - elapsed, 0);
     }
 
     clearTimer();
@@ -123,19 +121,21 @@ export function useSlideshow(
   };
 
   const exit = () => {
-  clearTimer();
+    clearTimer();
 
-  remainingTimeRef.current = null;
-  startTimeRef.current = null;
+    remainingTimeRef.current = null;
+    startTimeRef.current = null;
 
-  setIsPlaying(false);
-  setCurrentIndex(0);
-};
+    setIsPlaying(false);
+    setCurrentIndex(0);
+    setIsStart(false);
+  };
 
   return {
     currentMedia,
     currentIndex,
     isPlaying,
+    isStart,
     start,
     pause,
     next,

@@ -36,6 +36,7 @@ export default function HomeScreen() {
     currentMedia,
     currentIndex,
     isPlaying,
+    isStart,
     start,
     pause,
     next,
@@ -134,7 +135,7 @@ export default function HomeScreen() {
             {Math.round(processingProgress * 100)}%
           </Text>
         </View>
-      ) : !currentMedia || !isPlaying ? (
+      ) : !currentMedia || !isStart ? (
         <View style={styles.fullContainer}>
           <View style={styles.emptyState}>
             <Text style={styles.title}>Media Slideshow</Text>
