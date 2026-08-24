@@ -1,6 +1,13 @@
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import {
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
 
 import { useSlideshow } from "../hooks/useSlideshow";
 import type { MediaItem } from "../types/media";
@@ -11,6 +18,8 @@ import {
 } from "../utils/gif";
 
 export default function HomeScreen() {
+  const [isSlideshow, setIsSlideshow] = useState(false);
+
   const [selectedMedia, setSelectedMedia] = useState<MediaItem[]>([]);
 
   const [isProcessing, setIsProcessing] = useState(false);
@@ -23,7 +32,16 @@ export default function HomeScreen() {
 
   const [imageDuration, setImageDuration] = useState("5");
 
-  const { currentMedia, currentIndex } = useSlideshow(selectedMedia);
+  const {
+    currentMedia,
+    currentIndex,
+    isPlaying,
+    start,
+    pause,
+    next,
+    previous,
+    exit,
+  } = useSlideshow(selectedMedia, (Number(imageDuration) || 5) * 1000);
 
   const pickImages = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -77,6 +95,20 @@ export default function HomeScreen() {
     setSelectedMedia(media);
   };
 
+  const handleStart = () => {
+    if (selectedMedia.length === 0) {
+      return;
+    }
+
+    setIsSlideshow(true);
+    start();
+  };
+
+  const handleExit = () => {
+    pause();
+    setIsSlideshow(false);
+  };
+
   return (
     <View style={styles.container}>
       {isProcessing ? (
@@ -102,8 +134,8 @@ export default function HomeScreen() {
             {Math.round(processingProgress * 100)}%
           </Text>
         </View>
-      ) : !currentMedia ? (
-        <>
+      ) : !currentMedia || !isPlaying ? (
+        <View style={styles.fullContainer}>
           <View style={styles.emptyState}>
             <Text style={styles.title}>Media Slideshow</Text>
 
@@ -126,7 +158,18 @@ export default function HomeScreen() {
               style={styles.durationInput}
             />
           </View>
-        </>
+
+          <Pressable
+            style={[
+              styles.button,
+              selectedMedia.length === 0 && styles.disabledButton,
+            ]}
+            onPress={handleStart}
+            disabled={selectedMedia.length === 0}
+          >
+            <Text style={styles.buttonText}>▶ Start Slideshow</Text>
+          </Pressable>
+        </View>
       ) : (
         <View style={styles.slideshow}>
           <Image
@@ -135,12 +178,28 @@ export default function HomeScreen() {
             resizeMode="contain"
           />
 
-          <View style={styles.info}>
-            <Text style={styles.counter}>
-              {currentIndex + 1} / {selectedMedia.length}
-            </Text>
+          <View style={styles.controls}>
+            <Pressable style={styles.controlButton} onPress={exit}>
+              <Text style={styles.controlText}>✕</Text>
+            </Pressable>
 
-            <Text style={styles.type}>{currentMedia.type.toUpperCase()}</Text>
+            <Pressable style={styles.controlButton} onPress={previous}>
+              <Text style={styles.controlText}>⏮</Text>
+            </Pressable>
+
+            {!isPlaying ? (
+              <Pressable style={styles.controlButton} onPress={start}>
+                <Text style={styles.controlText}>▶</Text>
+              </Pressable>
+            ) : (
+              <Pressable style={styles.controlButton} onPress={pause}>
+                <Text style={styles.controlText}>⏸</Text>
+              </Pressable>
+            )}
+
+            <Pressable style={styles.controlButton} onPress={next}>
+              <Text style={styles.controlText}>⏭</Text>
+            </Pressable>
           </View>
         </View>
       )}
@@ -149,6 +208,13 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  fullContainer: {
+    flex: 1,
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+  },
+
   container: {
     flex: 1,
     backgroundColor: "#000",
@@ -257,7 +323,7 @@ const styles = StyleSheet.create({
 
   durationContainer: {
     alignItems: "center",
-    marginTop: 25,
+    marginBottom: 250,
   },
 
   durationLabel: {
@@ -276,5 +342,35 @@ const styles = StyleSheet.create({
     fontSize: 18,
     borderWidth: 1,
     borderColor: "#444",
+  },
+
+  controls: {
+    position: "absolute",
+    bottom: 40,
+    left: 0,
+    right: 0,
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 20,
+    zIndex: 10,
+  },
+
+  controlButton: {
+    width: 55,
+    height: 55,
+    borderRadius: 28,
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  controlText: {
+    color: "#fff",
+    fontSize: 22,
+  },
+
+  disabledButton: {
+    opacity: 0.4,
   },
 });
