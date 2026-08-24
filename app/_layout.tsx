@@ -32,6 +32,8 @@ export default function HomeScreen() {
 
   const [imageDuration, setImageDuration] = useState("5");
 
+  const [showControls, setShowControls] = useState(true);
+
   const {
     currentMedia,
     currentIndex,
@@ -173,35 +175,42 @@ export default function HomeScreen() {
         </View>
       ) : (
         <View style={styles.slideshow}>
-          <Image
-            source={{ uri: currentMedia.uri }}
-            style={styles.media}
-            resizeMode="contain"
-          />
+          <Pressable
+            style={styles.mediaContainer}
+            onPress={() => setShowControls((prev) => !prev)}
+          >
+            <Image
+              source={{ uri: currentMedia.uri }}
+              style={styles.media}
+              resizeMode="contain"
+            />
+          </Pressable>
 
-          <View style={styles.controls}>
-            <Pressable style={styles.controlButton} onPress={exit}>
-              <Text style={styles.controlText}>✕</Text>
-            </Pressable>
-
-            <Pressable style={styles.controlButton} onPress={previous}>
-              <Text style={styles.controlText}>⏮</Text>
-            </Pressable>
-
-            {!isPlaying ? (
-              <Pressable style={styles.controlButton} onPress={start}>
-                <Text style={styles.controlText}>▶</Text>
+          {showControls && (
+            <View style={styles.controls}>
+              <Pressable style={styles.controlButton} onPress={exit}>
+                <Text style={styles.controlText}>✕</Text>
               </Pressable>
-            ) : (
-              <Pressable style={styles.controlButton} onPress={pause}>
-                <Text style={styles.controlText}>⏸</Text>
-              </Pressable>
-            )}
 
-            <Pressable style={styles.controlButton} onPress={next}>
-              <Text style={styles.controlText}>⏭</Text>
-            </Pressable>
-          </View>
+              <Pressable style={styles.controlButton} onPress={previous}>
+                <Text style={styles.controlText}>⏮</Text>
+              </Pressable>
+
+              {!isPlaying ? (
+                <Pressable style={styles.controlButton} onPress={start}>
+                  <Text style={styles.controlText}>▶</Text>
+                </Pressable>
+              ) : (
+                <Pressable style={styles.controlButton} onPress={pause}>
+                  <Text style={styles.controlText}>⏸</Text>
+                </Pressable>
+              )}
+
+              <Pressable style={styles.controlButton} onPress={next}>
+                <Text style={styles.controlText}>⏭</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -373,5 +382,10 @@ const styles = StyleSheet.create({
 
   disabledButton: {
     opacity: 0.4,
+  },
+
+  mediaContainer: {
+    width: "100%",
+    height: "100%",
   },
 });
