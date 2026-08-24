@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type { MediaItem } from "../types/media";
+import { getCachedGifDuration } from "../utils/gif";
 
 const IMAGE_DURATION = 5000;
 
@@ -13,13 +14,25 @@ export function useSlideshow(media: MediaItem[]) {
       return;
     }
 
-    if (currentMedia.type === "image") {
-      const timer = setTimeout(() => {
-        setCurrentIndex((prev) => prev + 1);
-      }, IMAGE_DURATION);
+    let duration: number;
 
-      return () => clearTimeout(timer);
+    if (currentMedia.type === "image") {
+      duration = IMAGE_DURATION;
+    } else {
+      const gifDuration = getCachedGifDuration(currentMedia.uri);
+
+      if (gifDuration === undefined) {
+        return;
+      }
+
+      duration = gifDuration;
     }
+
+    const timer = setTimeout(() => {
+      setCurrentIndex((prev) => prev + 1);
+    }, duration);
+
+    return () => clearTimeout(timer);
   }, [currentMedia]);
 
   return {
