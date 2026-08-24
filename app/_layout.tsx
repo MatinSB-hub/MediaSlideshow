@@ -1,6 +1,6 @@
 import * as ImagePicker from "expo-image-picker";
 import { useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { useSlideshow } from "../hooks/useSlideshow";
 import type { MediaItem } from "../types/media";
@@ -20,6 +20,8 @@ export default function HomeScreen() {
   const [processedCount, setProcessedCount] = useState(0);
 
   const [totalToProcess, setTotalToProcess] = useState(0);
+
+  const [imageDuration, setImageDuration] = useState("5");
 
   const { currentMedia, currentIndex } = useSlideshow(selectedMedia);
 
@@ -101,15 +103,30 @@ export default function HomeScreen() {
           </Text>
         </View>
       ) : !currentMedia ? (
-        <View style={styles.emptyState}>
-          <Text style={styles.title}>Media Slideshow</Text>
+        <>
+          <View style={styles.emptyState}>
+            <Text style={styles.title}>Media Slideshow</Text>
 
-          <Text style={styles.subtitle}>Select your photos and GIFs</Text>
+            <Text style={styles.subtitle}>Select your photos and GIFs</Text>
 
-          <Pressable style={styles.button} onPress={pickImages}>
-            <Text style={styles.buttonText}>Select Media</Text>
-          </Pressable>
-        </View>
+            <Pressable style={styles.button} onPress={pickImages}>
+              <Text style={styles.buttonText}>Select Media</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.durationContainer}>
+            <Text style={styles.durationLabel}>Image Duration (seconds)</Text>
+
+            <TextInput
+              value={imageDuration}
+              onChangeText={setImageDuration}
+              keyboardType="numeric"
+              placeholder="5"
+              placeholderTextColor="#777"
+              style={styles.durationInput}
+            />
+          </View>
+        </>
       ) : (
         <View style={styles.slideshow}>
           <Image
@@ -236,5 +253,28 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "600",
     marginTop: 8,
+  },
+
+  durationContainer: {
+    alignItems: "center",
+    marginTop: 25,
+  },
+
+  durationLabel: {
+    color: "#fff",
+    fontSize: 16,
+    marginBottom: 10,
+  },
+
+  durationInput: {
+    width: 100,
+    height: 45,
+    backgroundColor: "#222",
+    color: "#fff",
+    borderRadius: 8,
+    textAlign: "center",
+    fontSize: 18,
+    borderWidth: 1,
+    borderColor: "#444",
   },
 });
